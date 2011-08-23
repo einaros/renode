@@ -12,7 +12,10 @@
   },
   "devDependencies": {},
   "engines": {
-    "node": "*"
-  },
-  "main": "renode"
+    "node": ">= 0.4.0"
+  }
+  "main": "renode",
+  "bin": {
+      "renode": "./renode"
+  }
 }
