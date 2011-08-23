@@ -7,16 +7,16 @@ var growl = require('growl');
 
 function keepAlive(target) {
     var proc = null;
-    var kill = function(signal) {
+    var kill = function(signal, source) {
         if (proc) { 
-            console.log('[renode] killing child process');
+            console.log('[renode] killing child process because of change in ' + source);
             proc.kill(signal || 'SIGTERM');
             proc = null;
         }
     }
-    var launch = function() {
-        console.log('[renode] (re)spawning child process');
-        growl.notify('[renode] (re)spawning child process');
+    var launch = function(source) {
+        console.log('[renode] (re)spawning child process' + (source ? ' because of change in ' + source : ''));
+        growl.notify('[renode] (re)spawning child process' + (source ? ' because of change in ' + source : ''));
         kill();
         proc = spawn('node', [target]);
         proc.stdout.on('data', function (data) {
@@ -67,4 +67,4 @@ if (!exists(process.argv[2])) {
     return;
 }
 
-keepAlive(process.argv[2]);
+keepAlive.apply(this, process.argv.slice(2));
