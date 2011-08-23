@@ -15,8 +15,8 @@ function keepAlive(target) {
         }
     }
     var launch = function(source) {
-        console.log('[renode] (re)spawning child process' + (source ? ' because of change in ' + source : ''));
-        growl.notify('[renode] (re)spawning child process' + (source ? ' because of change in ' + source : ''));
+        console.log('[renode] (re)spawning child process');
+        growl.notify('[renode] (re)spawning child process');
         kill();
         proc = spawn('node', [target]);
         proc.stdout.on('data', function (data) {
@@ -32,13 +32,15 @@ function keepAlive(target) {
     }
     fs.watchFile(target, function (curr, prev) {
         if (curr.mtime.getTime() == prev.mtime.getTime()) return;
-        kill('SIGHUP');
+        kill('SIGHUP', target);
     });
     for (var i = 1; i < arguments.length; ++i) {
-        fs.watchFile(arguments[i], function (curr, prev) {
-            if (curr.mtime.getTime() == prev.mtime.getTime()) return;
-            kill('SIGHUP');
-        });        
+        (function(source) {
+            fs.watchFile(source, function (curr, prev) {
+                if (curr.mtime.getTime() == prev.mtime.getTime()) return;
+                kill('SIGHUP', source);
+            });
+        })(arguments[i]);
     }
     launch();
 }
@@ -54,7 +56,7 @@ function exists(file) {
 }
 
 function showHelp() {
-    console.log('usage: renode <js file> [watch file 2] [watch file 3] [... n]')    
+    console.log('usage: renode <js file> [[watch file 2] ... [watch file n]]')    
 }
 
 if (process.argv.length < 3) {
