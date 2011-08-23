@@ -1,0 +1,70 @@
+#! /usr/local/bin/node
+
+var fs = require('fs');
+var util  = require('util');
+var spawn = require('child_process').spawn;
+var growl = require('growl');
+
+function keepAlive(target) {
+    var proc = null;
+    var kill = function(signal) {
+        if (proc) { 
+            console.log('[renode] killing child process');
+            proc.kill(signal || 'SIGTERM');
+            proc = null;
+        }
+    }
+    var launch = function() {
+        console.log('[renode] (re)spawning child process');
+        growl.notify('[renode] (re)spawning child process');
+        kill();
+        proc = spawn('node', [target]);
+        proc.stdout.on('data', function (data) {
+            console.log(data.toString('utf8'));
+        });
+        proc.stderr.on('data', function (data) {
+            console.log(data.toString('utf8'));
+        });
+        proc.on('exit', function (code, signal) {
+            proc = null;
+            if (signal == 'SIGHUP') process.nextTick(launch);
+        });
+    }
+    fs.watchFile(target, function (curr, prev) {
+        if (curr.mtime.getTime() == prev.mtime.getTime()) return;
+        kill('SIGHUP');
+    });
+    for (var i = 1; i < arguments.length; ++i) {
+        fs.watchFile(arguments[i], function (curr, prev) {
+            if (curr.mtime.getTime() == prev.mtime.getTime()) return;
+            kill('SIGHUP');
+        });        
+    }
+    launch();
+}
+
+function exists(file) {
+    try {
+        fs.statSync(file);
+        return true;
+    }
+    catch (e) {
+        return false;
+    }
+}
+
+function showHelp() {
+    console.log('usage: renode <js file> [watch file 2] [watch file 3] [... n]')    
+}
+
+if (process.argv.length < 3) {
+    showHelp();
+    return;
+}
+if (!exists(process.argv[2])) {
+    console.error(process.argv[2] + ' does not exist');
+    showHelp();
+    return;
+}
+
+keepAlive(process.argv[2]);
