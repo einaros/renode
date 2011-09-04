@@ -19,7 +19,7 @@ function keepAlive(target) {
     var kill = function(signal, source) {
         if (proc) {
             sources.push(source);
-            proc.kill(signal || 'SIGTERM');
+            proc.kill(signal || 'SIGTERM');
             proc = null;
         }
         else launch(source);
