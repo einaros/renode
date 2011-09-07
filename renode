@@ -2,6 +2,7 @@
 
 var fs = require('fs');
 var util  = require('util');
+var rutil = require('./util');
 var spawn = require('child_process').spawn;
 var growl = require('growl');
 var path = require('path');
@@ -55,16 +56,6 @@ function keepAlive(target) {
     launch();
 }
 
-function exists(file) {
-    try {
-        fs.statSync(file);
-        return true;
-    }
-    catch (e) {
-        return false;
-    }
-}
-
 function showHelp() {
     console.log('usage: renode <js file> [[watch file 2] ... [watch file n]]')    
 }
@@ -73,10 +64,20 @@ if (process.argv.length < 3) {
     showHelp();
     return;
 }
-if (!exists(process.argv[2])) {
+if (!rutil.exists(process.argv[2])) {
     console.error(process.argv[2] + ' does not exist');
     showHelp();
     return;
 }
 processName = path.basename(process.argv[2]);
-keepAlive.apply(this, process.argv.slice(2));
+var args = [process.argv[2]];
+var watchFiles = process.argv.slice(3);
+watchFiles.forEach(function(watchFile) {
+    var expandedFiles = rutil.findFiles(watchFile);
+    expandedFiles.forEach(function(file) {
+        if (args.indexOf(file) == -1) {
+            args.push(file);
+        }
+    });
+});
+keepAlive.apply(this, args);
