@@ -26,7 +26,7 @@ function keepAlive(target) {
         else launch(source);
     }
     var launch = function(source) {
-        notify('(re)spawning child process' + (source ? ' because of change in ' + source : ''));
+        notify((source ? 're' : '') + 'spawning process' + (source ? ' because of change in ' + source : ''));
         proc = spawn('node', [target]);
         proc.stdout.on('data', function (data) {
             console.log(data.toString('utf8'));
